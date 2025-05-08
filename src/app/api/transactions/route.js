@@ -67,7 +67,7 @@ export async function POST(request) {
       data: {
         userId: userId,
         phoneNumber: phoneNumber,
-        amount: parseInt(amount, 10), // Fix decimal precision issues by converting to integer
+        amount: amount, // Fix decimal precision issues by converting to integer
         votePackageAmount: voteAmount,
         paymentProofUrl: fileUrl, // Store the file URL path in the database
         status: "PENDING",
