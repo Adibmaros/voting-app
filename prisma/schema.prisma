@@ -1,0 +1,125 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  VOTER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(40)
+  email     String   @unique
+  role      Role     @default(VOTER)
+  password  String   @db.VarChar(255)
+  sessions Session[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  transactions Transaction[]
+  vouchers     Voucher[]
+  votes        Vote[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  userId    Int
+  expiresAt DateTime
+
+  user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+  
+}
+
+model Candidate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  photoUrl    String?  @map("photo_url")
+  description String?  @db.Text
+  voteCount   Int      @default(0) @map("vote_count")
+  percentage  Float    @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  votes Vote[]
+
+  @@map("candidates")
+}
+
+enum PAYMENT_STATUS {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Transaction {
+  id                Int            @id @default(autoincrement())
+  userId            Int            @map("user_id")
+  phoneNumber       String?        @map("phone_number") @db.VarChar(20)
+  amount            Int
+  votePackageAmount Int            @map("vote_package_amount")
+  paymentProofUrl   String?        @map("payment_proof_url")
+  status            PAYMENT_STATUS @default(PENDING)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  deletedAt         DateTime?      @map("deleted_at")
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id])
+  vouchers Voucher[]
+
+  @@map("transactions")
+}
+
+enum VOUCHER_STATUS {
+  USED
+  UNUSED
+}
+
+model Voucher {
+  id           Int            @id @default(autoincrement())
+  code         String         @unique
+  voteAmount   Int            @map("vote_amount")
+  userId       Int            @map("user_id")
+  transactionId Int           @map("transaction_id")
+  status       VOUCHER_STATUS @default(UNUSED)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  deletedAt    DateTime?      @map("deleted_at")
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id])
+  transaction Transaction   @relation(fields: [transactionId], references: [id])
+  votes       Vote[]
+
+  @@map("vouchers")
+}
+
+model Vote {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  candidateId Int      @map("candidate_id")
+  voucherId   Int      @map("voucher_id")
+  voteAmount  Int      @map("vote_amount")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+  candidate Candidate @relation(fields: [candidateId], references: [id])
+  voucher   Voucher   @relation(fields: [voucherId], references: [id])
+
+  @@map("votes")
+}
