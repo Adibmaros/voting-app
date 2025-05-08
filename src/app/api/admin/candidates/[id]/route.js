@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
 
-    const candidate = await prisma.candidate.findUnique({
+    const candidate = await prisma.candidate.findFirst({
       where: { id },
     });
 
